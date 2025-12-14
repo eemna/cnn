@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../Downloads/archive (1)/car-parts/train"
+		},
+		{
+			"path": "../../../Downloads/archive (1)/car-parts/test"
+		},
+		{
+			"path": "../../../Downloads/archive (1)/car-parts/valid"
+		}
+	],
+	"settings": {}
+}
