@@ -15,10 +15,10 @@ println("Classes = ", class_names)
 # ===================== IMAGE PREPROCESS =====================
 IMG_SIZE = (64, 64)
 
-function preprocess_image(bytes)
+function preprocess_image(bytes::Vector{UInt8})
     img = load(IOBuffer(bytes))
-    img = channelview(img)
-    img = permutedims(img, (2,3,1))
+    img = channelview(img)              # C × H × W
+    img = permutedims(img, (2,3,1))     # H × W × C
     img = Float32.(img)
 
     if maximum(img) > 1.5f0
@@ -28,15 +28,15 @@ function preprocess_image(bytes)
     img = imresize(img, IMG_SIZE)
     img = clamp.(img, 0f0, 1f0)
 
-    return reshape(img, size(img)..., 1)
+    return reshape(img, size(img)..., 1)   # H × W × C × 1
 end
 
 # ===================== PREDICT =====================
-function predict_image(bytes)
+function predict_image(bytes::Vector{UInt8})
     x = preprocess_image(bytes)
     ŷ = model(x)
 
-    probs = Flux.softmax(ŷ[:,1])
+    probs = Flux.softmax(ŷ[:, 1])
     idx = argmax(probs)
 
     return Dict(
@@ -46,11 +46,12 @@ function predict_image(bytes)
 end
 
 # ===================== SERVER =====================
-port = parse(Int, get(ENV, "PORT", "8081"))
+# 👉 ICI LE PORT (IMPORTANT)
+port = parse(Int, get(ENV, "PORT", "8080"))
 
 println("🚀 Server running on port $port")
 
-HTTP.serve(port) do req
+HTTP.serve("0.0.0.0", port) do req
     if req.method == "POST" && req.target == "/predict"
         result = predict_image(req.body)
         return HTTP.Response(200, JSON3.write(result))
@@ -58,14 +59,3 @@ HTTP.serve(port) do req
 
     return HTTP.Response(200, "✅ CNN Car Parts API running")
 end
-
-# ---------- TEST IMAGE ----------
-IMG_SIZE = (128,128)
-img_path = "C:/Users/emnar/OneDrive/Bureau/c/162.png"   # ← mets une image ici
-
-X = preprocess(img_path, IMG_SIZE)
-
-ŷ = model(X)
-pred = Flux.onecold(ŷ, 1:length(class_names))
-
-println("Prediction: ", class_names[pred])
